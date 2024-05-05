@@ -130,23 +130,6 @@ module secure_wheels::secure_wheels {
         table::add<u64, Loan>(&mut lender.active_loans, record_no, loan);
     }
 
-    // Add a loan to lender's active loans
-    public fun add_loan_to_lender(
-        lender: &mut Lender,
-        loan: Loan,
-        record_no: u64,
-        ctx: &mut TxContext
-    ) {
-        // Action to be performed by the lender
-        assert!(tx_context::sender(ctx) == lender.lender_address, Error_NotLender);
-        // check valid loan
-        assert!(loan.borrower != loan.lender, Error_InvalidLoan);
-        // Check if the loan already exists.
-        assert!(!table::contains(&lender.active_loans, record_no), Error_LoanAlreadyExists);
-        table::add<u64, Loan>(&mut lender.active_loans, record_no, loan);
-    }
-
-
     // Function to calculate the monthly payment amount.
     public fun calculate_monthly_payment(loan: &mut Loan, interest_rate: u64, term_length: u64) {
         let loan_amount_value = balance::value(&loan.loan_amount);
@@ -308,21 +291,4 @@ module secure_wheels::secure_wheels {
     }
 
 
-
-    // Transaction to update the credit score of a borrower.
-    public entry fun update_credit_score(
-        borrower: &mut Borrower,
-        lender: &Lender,
-        credit_score: u64,
-        ctx: &mut TxContext
-    ) {
-        // Lender should be the one to update the credit score.
-        assert!(tx_context::sender(ctx) == lender.lender_address, Error_NotLender);
-        // Check that borrower is not making this call.
-        assert!(tx_context::sender(ctx) == borrower.borrower_address, Error_NotBorrower);
-        borrower.credit_score = credit_score;
-    }
-
-  
-  
 }
