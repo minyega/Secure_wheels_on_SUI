@@ -152,14 +152,13 @@ module Secure_wheels::wheel {
         // join the balance 
         balance::join(&mut loan.loan_amount, balance_);
     }
-    // // Claim overdue payment
+    // Claim overdue payment
     // public fun claim_overdue_pay(
     //     borrower: &mut Borrower,
     //     loan: &mut Loan,
     //     clock: &Clock,
     //     ctx: &mut TxContext
     // ) {
-     
     //     // Check if the lender is making the call.
     //     assert!(tx_context::sender(ctx) == loan.lender, Error_NotLender);
     //     // Check if the loan is not already paid off.
@@ -181,25 +180,6 @@ module Secure_wheels::wheel {
         
     // }
     
-    // // Function to make a payment towards a loan by the borrower deduct from escrow
-    // public entry fun make_payment(
-    //     borrower: &mut Borrower,
-    //     loan: &mut Loan,
-    //     payment_amount: u64,
-    //     ctx: &mut TxContext
-    // ) {
-    //     // Check if the borrower is making the call.
-    //     assert!(tx_context::sender(ctx) == borrower.borrower_address, Error_NotBorrower);
-    //     // Check if the loan is not already paid off.
-    //     assert!(!loan.full_paid_off, Error_LoanAlreadyPaidOff);
-    //     // Check if the payment amount is valid.
-    //     assert!(payment_amount > 0, Error_InvalidPaymentAmount);
-
-    //     // Transfer the payment amount from the borrower's escrow to the lender.
-    //     let transfer_amnt = coin::take(&mut borrower.escrow,payment_amount , ctx);
-    //     transfer::public_transfer(transfer_amnt, loan.lender);
-    // }
-
     // // Mark the loan as full paid off by the borrower
     // public fun mark_loan_as_paid_off(
     //     borrower: &mut Borrower,
