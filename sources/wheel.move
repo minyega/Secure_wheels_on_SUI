@@ -180,21 +180,6 @@ module Secure_wheels::wheel {
         
     // }
     
-    // // Mark the loan as full paid off by the borrower
-    // public fun mark_loan_as_paid_off(
-    //     borrower: &mut Borrower,
-    //     loan: &mut Loan,
-    //     clock: &Clock,
-    //     ctx: &mut TxContext
-    // ) {
-    //     // Check if the borrower is making the call.
-    //     assert!(tx_context::sender(ctx) == borrower.borrower_address, Error_NotBorrower);
-    //     // Check if the loan is not already paid off.
-    //     assert!(!loan.full_paid_off, Error_LoanAlreadyPaidOff);
-
-    //     loan.full_paid_off = true;
-    //     loan.term_end = some(clock::timestamp_ms(clock));
-    // }
     // // Function to get the loan details.    
     // public fun get_loan_details(loan: &Loan) : (String, u64, &Balance<SUI>, u64, u64, u64, u64, Option<u64>, bool) {
      
