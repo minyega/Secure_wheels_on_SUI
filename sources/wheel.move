@@ -1,32 +1,21 @@
 module Secure_wheels::wheel {
     use sui::transfer;
-    use sui::table::{Self, Table};
     use sui::sui::SUI;
     use sui::coin::{Self, Coin};
     use sui::clock::{Self, Clock};
     use sui::object::{Self, UID, ID};
     use sui::balance::{Self, Balance};
-    use sui::tx_context::{Self, TxContext, sender};
+    use sui::tx_context::{TxContext, sender};
 
-    use std::string::{Self, String};
-    use std::option::{Self, Option, none, some};
+    use std::string::{String};
+    use std::option::{Option, none};
 
     use Secure_wheels::usdc::{USDC};
 
     // Constants
-    const Error_InvalidLoan: u64 = 1;
-    const Error_InvalidBorrower: u64 = 2;
-    const Error_InvalidLender: u64 = 3;
-    const Error_InsufficientFunds: u64 = 4;
-    const Error_InvalidLoanAmount: u64 = 5;
-    const Error_InvalidInterestRate: u64 = 6;
-    const Error_InvalidTermLength: u64 = 7;
-    const Error_LoanAlreadyExists: u64 = 8;
-    const Error_NotBorrower: u64 = 9;
-    const Error_NotLender: u64 = 10;
-    const Error_LoanNotFound: u64 = 11;
-    const Error_InvalidPaymentAmount: u64 = 12;
-    const Error_LoanAlreadyPaidOff: u64 = 13;
+    const Error_InvalidBorrower: u64 = 0;
+    const Error_InsufficientFunds: u64 = 1;
+    const Error_LoanAlreadyPaidOff: u64 = 2;
 
     /* Structs */
    struct Loan has key, store {
@@ -120,7 +109,6 @@ module Secure_wheels::wheel {
             deposit: amount,
             active: true
         };
-
         (borrower, coin_)
     }
 
@@ -134,7 +122,6 @@ module Secure_wheels::wheel {
         let monthly_interest_rate = interest_rate / 12;
         let monthly_interest = (loan_amount_value * monthly_interest_rate) / 100;
         let monthly_payment = (loan_amount_value + monthly_interest) / term_length;
-
         loan.monthly_payment = monthly_payment;
     }
 
@@ -153,36 +140,45 @@ module Secure_wheels::wheel {
         balance::join(&mut loan.loan_amount, balance_);
     }
     // Claim overdue payment
-    // public fun claim_overdue_pay(
-    //     borrower: &mut Borrower,
-    //     loan: &mut Loan,
-    //     clock: &Clock,
-    //     ctx: &mut TxContext
-    // ) {
-    //     // Check if the lender is making the call.
-    //     assert!(tx_context::sender(ctx) == loan.lender, Error_NotLender);
-    //     // Check if the loan is not already paid off.
-    //     assert!(!loan.full_paid_off, Error_LoanAlreadyPaidOff);
+    public fun claim_overdue_pay(
+        borrower: &mut Borrower,
+        loan: &mut Loan,
+        clock: &Clock,
+        ctx: &mut TxContext
+    ) {
+        // Check if the lender is making the call.
+        assert!(borrower.loan == object::id(loan), Error_InvalidBorrower);
+        // Check if the loan is not already paid off.
+        assert!(!loan.full_paid_off, Error_LoanAlreadyPaidOff);
+        // Check if the due date has passed.
+        let due_date = loan.term_start + loan.term_length;
+        let current_date = clock::timestamp_ms(clock);
+        assert!(current_date > due_date, Error_InsufficientFunds);
 
-    //     // Check if the due date has passed.
-    //     let due_date = loan.term_start + loan.term_length;
-    //     let current_date = clock::timestamp_ms(clock);
-    //     assert!(current_date > due_date, Error_InsufficientFunds);
+        // Calculate the overdue payment amount.
+        let esc_ = balance::value(&borrower.balance);
+        let overdue_days = (current_date - due_date) / (1000 * 60 * 60 * 24);
+        let overdue_payment = ((esc_ as u64) * 2 * overdue_days) / 100;
 
-    //     // Calculate the overdue payment amount.
-    //     let esc_ = balance::value(&borrower.escrow);
-    //     let overdue_days = (current_date - due_date) / (1000 * 60 * 60 * 24);
-    //     let overdue_payment = ((esc_ as u64) * 2 * overdue_days) / 100;
+        // Transfer the overdue payment amount to the lender.
+        let transfer_amnt = coin::take(&mut borrower.balance, overdue_payment, ctx);
+        transfer::public_transfer(transfer_amnt, loan.lender);
+    }
 
-    //     // Transfer the overdue payment amount to the lender.
-    //     let transfer_amnt = coin::take(&mut borrower.escrow, overdue_payment, ctx);
-    //     transfer::public_transfer(transfer_amnt, loan.lender);
-        
-    // }
+    public fun borrower_withdraw(borrower: &mut Borrower, amount: u64, ctx: &mut TxContext) : Coin<SUI> {
+        assert!(amount < borrower.depth, Error_InsufficientFunds);
+        let coin_ = coin::take(&mut borrower.balance, amount, ctx);
+        coin_
+    }
+
+    public fun lender_withdraw(cap: &Lender, loan: &mut Loan, amount: u64, ctx: &mut TxContext) : Coin<USDC> {
+        assert!(cap.loan == object::id(loan), Error_InvalidBorrower);
+        let coin_ = coin::take(&mut loan.loan_amount, amount, ctx);
+        coin_
+    }
     
     // Function to get the loan details.    
     public fun get_loan_details(loan: &Loan) : (String, u64, u64, u64, u64, u64, u64, Option<u64>, bool) {
-     
         (
             loan.car,
             loan.car_price,
@@ -195,7 +191,6 @@ module Secure_wheels::wheel {
             loan.full_paid_off
         )
     }
-
 
     // Function to get the loan amount.
     public fun get_loan_amount(loan: &Loan) : u64 {
