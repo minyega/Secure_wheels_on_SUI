@@ -1,4 +1,4 @@
-module Secure_wheels::Secure_wheels {
+module secure_wheels::secure_wheels {
     use sui::transfer;
     use sui::table::{Self, Table};
     use sui::sui::SUI;
@@ -8,7 +8,6 @@ module Secure_wheels::Secure_wheels {
     use sui::balance::{Self, Balance};
     use std::option::{Option, none, some};
     use sui::tx_context::{Self, TxContext};
-
 
     // Constants
     const Error_InvalidLoan: u64 = 1;
@@ -61,24 +60,23 @@ module Secure_wheels::Secure_wheels {
     /* Functions */
     
     // Function to create a new Borrower object.
-    public fun new_borrower(name: vector<u8>, borrower_address: address, ctx: &mut TxContext) : Borrower {
+    public fun new_borrower(name: vector<u8>, borrower_address: address, ctx: &mut TxContext): Borrower {
         Borrower {
             id: object::new(ctx),
-            borrower_address: borrower_address,
+            borrower_address,
             escrow: balance::zero(),
-            name: name,
+            name,
             credit_score: 0,
             loan_history: table::new<u64, Loan>(ctx)
         }
     }
 
     // Function to create a new Lender object.
-    public fun new_lender(name: vector<u8>, lender_address: address, ctx: &mut TxContext) : Lender {
-        // Check if the lender address exists.
+    public fun new_lender(name: vector<u8>, lender_address: address, ctx: &mut TxContext): Lender {
         Lender {
             id: object::new(ctx),
-            lender_address: lender_address,
-            name: name,
+            lender_address,
+            name,
             active_loans: table::new<u64, Loan>(ctx)
         }
     }
@@ -89,17 +87,15 @@ module Secure_wheels::Secure_wheels {
         lender: &mut Lender,
         car: vector<u8>,
         car_price: u64,
-        loan_amount: Balance<SUI>,
+        loan_amount: u64,
         interest_rate: u64,
         term_length: u64,
         clock: &Clock,
         record_no: u64,
         ctx: &mut TxContext
-    )  {
-        // Action to be performed by the lender
-        assert!(tx_context::sender(ctx) == lender.lender_address, Error_NotLender);
+    ) {
         // Check if the loan amount is valid.
-        assert!(balance::value(&loan_amount) <= car_price, Error_InvalidLoanAmount);
+        assert!(loan_amount <= car_price, Error_InvalidLoanAmount);
         // Check if the interest rate is valid.
         assert!(interest_rate > 0, Error_InvalidInterestRate);
         // Check if the term length is valid.
@@ -107,59 +103,41 @@ module Secure_wheels::Secure_wheels {
         // Check if the borrower is valid.
         assert!(borrower.borrower_address != lender.lender_address, Error_InvalidBorrower);
 
-     
-            
+        let loan_amount_balance = coin::take(&mut borrower.escrow, loan_amount, ctx);
+
         let loan = Loan {
             id: object::new(ctx),
             borrower: borrower.borrower_address,
             lender: lender.lender_address,
-            car: car,
-            car_price: car_price,
-            loan_amount: loan_amount,
-            interest_rate: interest_rate,
-            term_length: term_length,
-            monthly_payment: 0,  // Place default as 0
+            car,
+            car_price,
+            loan_amount: loan_amount_balance,
+            interest_rate,
+            term_length,
+            monthly_payment: 0, // Place default as 0
             term_start: clock::timestamp_ms(clock),
             term_end: none(),
             full_paid_off: false
         };
 
-        // Add the loan to the borrower's loan history.
-        table::add<u64, Loan>(&mut borrower.loan_history,record_no , loan);
-   
-   }
+        // Calculate the monthly payment amount.
+        calculate_monthly_payment(&mut loan, interest_rate, term_length);
 
-    // Add a loan to lender's active loans
-    public fun add_loan_to_lender(
-        lender: &mut Lender,
-        loan: Loan,
-        record_no: u64,
-        ctx: &mut TxContext
-    ) {
-        // Action to be performed by the lender
-        assert!(tx_context::sender(ctx) == lender.lender_address, Error_NotLender);
-        // check valid loan
-        assert!(loan.borrower != loan.lender, Error_InvalidLoan);
-        // Check if the loan already exists.
-        assert!(!table::contains(&lender.active_loans, record_no), Error_LoanAlreadyExists);
+        // Add the loan to the borrower's loan history.
+        table::add<u64, Loan>(&mut borrower.loan_history, record_no, loan);
+
+        // Add the loan to the lender's active loans.
         table::add<u64, Loan>(&mut lender.active_loans, record_no, loan);
     }
 
-
     // Function to calculate the monthly payment amount.
-    public fun calculate_monthly_payment(
-        loan: &mut Loan,
-        interest_rate: u64,
-        term_length: u64
-    ) {
+    public fun calculate_monthly_payment(loan: &mut Loan, interest_rate: u64, term_length: u64) {
         let loan_amount_value = balance::value(&loan.loan_amount);
         let monthly_interest_rate = interest_rate / 12;
         let monthly_interest = (loan_amount_value * monthly_interest_rate) / 100;
         let monthly_payment = (loan_amount_value + monthly_interest) / term_length;
 
         loan.monthly_payment = monthly_payment;
-
-
     }
 
     // Add Loan Amount to the Loan
@@ -176,8 +154,8 @@ module Secure_wheels::Secure_wheels {
         balance::join(&mut loan.loan_amount, balance_);
     }
 
-    // add coin to the escrow of the borrower
-    public fun add_coin_to_escrow(
+    // Add coin to the escrow of the borrower
+    public entry fun add_coin_to_escrow(
         borrower: &mut Borrower,
         coin: Coin<SUI>,
         ctx: &mut TxContext
@@ -189,20 +167,19 @@ module Secure_wheels::Secure_wheels {
     }
 
     // Claim overdue payment
-    public fun claim_overdue_pay(
+    public entry fun claim_overdue_pay(
         borrower: &mut Borrower,
         loan: &mut Loan,
         clock: &Clock,
         ctx: &mut TxContext
     ) {
-     
         // Check if the lender is making the call.
         assert!(tx_context::sender(ctx) == loan.lender, Error_NotLender);
         // Check if the loan is not already paid off.
         assert!(!loan.full_paid_off, Error_LoanAlreadyPaidOff);
 
         // Check if the due date has passed.
-        let due_date = loan.term_start + loan.term_length;
+        let due_date = loan.term_start + (loan.term_length * 86400000); // Convert term length from months to milliseconds
         let current_date = clock::timestamp_ms(clock);
         assert!(current_date > due_date, Error_InsufficientFunds);
 
@@ -214,7 +191,6 @@ module Secure_wheels::Secure_wheels {
         // Transfer the overdue payment amount to the lender.
         let transfer_amnt = coin::take(&mut borrower.escrow, overdue_payment, ctx);
         transfer::public_transfer(transfer_amnt, loan.lender);
-        
     }
     
     // Function to make a payment towards a loan by the borrower deduct from escrow
@@ -230,14 +206,20 @@ module Secure_wheels::Secure_wheels {
         assert!(!loan.full_paid_off, Error_LoanAlreadyPaidOff);
         // Check if the payment amount is valid.
         assert!(payment_amount > 0, Error_InvalidPaymentAmount);
+        // Check if the borrower has sufficient funds in the escrow.
+        assert!(balance::value(&borrower.escrow) >= payment_amount, Error_InsufficientFunds);
 
         // Transfer the payment amount from the borrower's escrow to the lender.
-        let transfer_amnt = coin::take(&mut borrower.escrow,payment_amount , ctx);
-        transfer::public_transfer(transfer_amnt, loan.lender);
+        let transfer_amnt = coin::take(&mut borrower.escrow, payment_amount, ctx);
+        let lender_balance = coin::into_balance(transfer_amnt);
+        balance::join(&mut loan.loan_amount, lender_balance);
 
-     
+        // Update the loan status if the loan is fully paid off.
+        if balance::value(&loan.loan_amount) == loan.car_price {
+            loan.full_paid_off = true;
+            loan.term_end = some(clock::timestamp_ms(ctx));
+        }
     }
-
     // Mark the loan as full paid off by the borrower
     public fun mark_loan_as_paid_off(
         borrower: &mut Borrower,
@@ -309,21 +291,4 @@ module Secure_wheels::Secure_wheels {
     }
 
 
-
-    // Transaction to update the credit score of a borrower.
-    public entry fun update_credit_score(
-        borrower: &mut Borrower,
-        lender: &Lender,
-        credit_score: u64,
-        ctx: &mut TxContext
-    ) {
-        // Lender should be the one to update the credit score.
-        assert!(tx_context::sender(ctx) == lender.lender_address, Error_NotLender);
-        // Check that borrower is not making this call.
-        assert!(tx_context::sender(ctx) == borrower.borrower_address, Error_NotBorrower);
-        borrower.credit_score = credit_score;
-    }
-
-  
-  
 }
