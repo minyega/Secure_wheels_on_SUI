@@ -11,6 +11,8 @@ module Secure_wheels::wheel {
     use std::string::{Self, String};
     use std::option::{Self, Option, none, some};
 
+    use Secure_wheels::usdc::{USDC};
+
     // Constants
     const Error_InvalidLoan: u64 = 1;
     const Error_InvalidBorrower: u64 = 2;
@@ -45,11 +47,10 @@ module Secure_wheels::wheel {
     struct Borrower has key, store {
         id: UID,
         loan: ID,
-        borrower_address: address,
-        escrow: Balance<SUI>,
-        name: String,
-        credit_score: u64,
-        loan_history: Table<u64, Loan>
+        owner: address,
+        balance: Balance<SUI>,
+        depth: u64,
+        active: bool
     }
 
     struct Lender has key, store {
@@ -57,7 +58,7 @@ module Secure_wheels::wheel {
         loan: ID,
         lender_address: address,
         name: String,
-        active_loans: Table<u64, Loan>
+        active: bool
     }
 
     // Function to create a new Lender object.
@@ -70,7 +71,6 @@ module Secure_wheels::wheel {
         interest_rate: u64,
         term_length: u64,
         clock: &Clock,
-        record_no: u64,
         ctx: &mut TxContext
         ) : (Lender, Loan) {
         let id_ = object::new(ctx);
@@ -95,7 +95,7 @@ module Secure_wheels::wheel {
             loan: inner_,
             lender_address: lender_address,
             name: name,
-            active_loans: table::new<u64, Loan>(ctx)
+            active: false
         };
         (lender, loan)
 
