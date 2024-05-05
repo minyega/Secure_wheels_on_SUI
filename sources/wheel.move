@@ -152,19 +152,6 @@ module Secure_wheels::wheel {
         // join the balance 
         balance::join(&mut loan.loan_amount, balance_);
     }
-
-    // // add coin to the escrow of the borrower
-    // public fun add_coin_to_escrow(
-    //     borrower: &mut Borrower,
-    //     coin: Coin<SUI>,
-    //     ctx: &mut TxContext
-    // ) {
-    //     // Verify borrower is making the call
-    //     assert!(tx_context::sender(ctx) == borrower.borrower_address, Error_NotBorrower);
-    //     let balance_ = coin::into_balance(coin);
-    //     balance::join(&mut borrower.escrow, balance_);
-    // }
-
     // // Claim overdue payment
     // public fun claim_overdue_pay(
     //     borrower: &mut Borrower,
