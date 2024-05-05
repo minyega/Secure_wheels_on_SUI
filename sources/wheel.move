@@ -81,6 +81,8 @@ module Secure_wheels::wheel {
             full_paid_off: false
         };
 
+        calculate_monthly_payment(&mut loan, interest_rate, term_length);
+
         let lender = Lender {
             id: object::new(ctx),
             loan: inner_,
@@ -110,19 +112,6 @@ module Secure_wheels::wheel {
             active: true
         };
         (borrower, coin_)
-    }
-
-    // Function to calculate the monthly payment amount.
-    public fun calculate_monthly_payment(
-        loan: &mut Loan,
-        interest_rate: u64,
-        term_length: u64
-    ) {
-        let loan_amount_value = balance::value(&loan.loan_amount);
-        let monthly_interest_rate = interest_rate / 12;
-        let monthly_interest = (loan_amount_value * monthly_interest_rate) / 100;
-        let monthly_payment = (loan_amount_value + monthly_interest) / term_length;
-        loan.monthly_payment = monthly_payment;
     }
 
     // Add Loan Amount to the Loan
@@ -190,6 +179,19 @@ module Secure_wheels::wheel {
             loan.term_end,
             loan.full_paid_off
         )
+    }
+
+    // Function to calculate the monthly payment amount.
+    fun calculate_monthly_payment(
+        loan: &mut Loan,
+        interest_rate: u64,
+        term_length: u64
+    ) {
+        let loan_amount_value = balance::value(&loan.loan_amount);
+        let monthly_interest_rate = interest_rate / 12;
+        let monthly_interest = (loan_amount_value * monthly_interest_rate) / 100;
+        let monthly_payment = (loan_amount_value + monthly_interest) / term_length;
+        loan.monthly_payment = monthly_payment;
     }
 
     // Function to get the loan amount.
