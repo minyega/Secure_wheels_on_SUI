@@ -124,33 +124,34 @@ module Secure_wheels::wheel {
         (borrower, coin_)
     }
 
-    // // Function to calculate the monthly payment amount.
-    // public fun calculate_monthly_payment(
-    //     loan: &mut Loan,
-    //     interest_rate: u64,
-    //     term_length: u64
-    // ) {
-    //     let loan_amount_value = balance::value(&loan.loan_amount);
-    //     let monthly_interest_rate = interest_rate / 12;
-    //     let monthly_interest = (loan_amount_value * monthly_interest_rate) / 100;
-    //     let monthly_payment = (loan_amount_value + monthly_interest) / term_length;
+    // Function to calculate the monthly payment amount.
+    public fun calculate_monthly_payment(
+        loan: &mut Loan,
+        interest_rate: u64,
+        term_length: u64
+    ) {
+        let loan_amount_value = balance::value(&loan.loan_amount);
+        let monthly_interest_rate = interest_rate / 12;
+        let monthly_interest = (loan_amount_value * monthly_interest_rate) / 100;
+        let monthly_payment = (loan_amount_value + monthly_interest) / term_length;
 
-    //     loan.monthly_payment = monthly_payment;
-    // }
+        loan.monthly_payment = monthly_payment;
+    }
 
-    // // Add Loan Amount to the Loan
-    // public fun add_loan_amount_to_loan(
-    //     loan: &mut Loan,
-    //     coin: Coin<SUI>,
-    //     ctx: &mut TxContext
-    // ) {
-    //     // Verify lender is making the call
-    //     assert!(tx_context::sender(ctx) == loan.lender, Error_NotLender);
-    //     // check that is a valid lender
-    //     assert!(loan.borrower != loan.lender, Error_InvalidLender);
-    //     let balance_ = coin::into_balance(coin);
-    //     balance::join(&mut loan.loan_amount, balance_);
-    // }
+    // Add Loan Amount to the Loan
+    public fun pay_loan(
+        loan: &mut Loan,
+        borrower: &mut Borrower,
+        coin: Coin<USDC>,
+    ) {
+        assert!(borrower.loan == object::id(loan), Error_InvalidBorrower);
+        let balance_ = coin::into_balance(coin);
+        let amount = balance::value(&balance_);
+        // decrease the depth
+        borrower.depth = borrower.depth - amount;
+        // join the balance 
+        balance::join(&mut loan.loan_amount, balance_);
+    }
 
     // // add coin to the escrow of the borrower
     // public fun add_coin_to_escrow(
