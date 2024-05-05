@@ -57,31 +57,32 @@ module Secure_wheels::wheel {
         id: UID,
         loan: ID,
         lender_address: address,
-        name: String,
-        active: bool
+        value: u64
     }
 
     // Function to create a new Lender object.
     public fun new_lender(
-        name: String,
         lender_address: address, 
         car: String,
         car_price: u64,
-        loan_amount: Balance<SUI>,
         interest_rate: u64,
         term_length: u64,
+        coin: Coin<SUI>,
         clock: &Clock,
         ctx: &mut TxContext
         ) : (Lender, Loan) {
         let id_ = object::new(ctx);
         let inner_ = object::uid_to_inner(&id_);
+        // convert coin to balance
+        let amount = coin::value(&coin);
+        let balance_ = coin::into_balance(coin);
         let loan = Loan {
             id: id_,
             borrower: none(),
             lender: sender(ctx),
             car: car,
             car_price: car_price,
-            loan_amount: loan_amount,
+            loan_amount: balance_,
             interest_rate: interest_rate,
             term_length: term_length,
             monthly_payment: 0,  // Place default as 0
@@ -94,8 +95,7 @@ module Secure_wheels::wheel {
             id: object::new(ctx),
             loan: inner_,
             lender_address: lender_address,
-            name: name,
-            active: false
+            value: amount
         };
         (lender, loan)
 
