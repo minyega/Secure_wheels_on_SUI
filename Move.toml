@@ -1,0 +1,9 @@
+[package]
+name = "Secure_wheels"
+version = "0.0.1"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+
+[addresses]
+Secure_wheels = "0x0"
