@@ -101,23 +101,6 @@ module Secure_wheels::wheel {
 
     }
 
-    // // Add a loan to lender's active loans
-    // public fun add_loan_to_lender(
-    //     lender: &mut Lender,
-    //     loan: Loan,
-    //     record_no: u64,
-    //     ctx: &mut TxContext
-    // ) {
-    //     // Action to be performed by the lender
-    //     assert!(tx_context::sender(ctx) == lender.lender_address, Error_NotLender);
-    //     // check valid loan
-    //     assert!(loan.borrower != loan.lender, Error_InvalidLoan);
-    //     // Check if the loan already exists.
-    //     assert!(!table::contains(&lender.active_loans, record_no), Error_LoanAlreadyExists);
-    //     table::add<u64, Loan>(&mut lender.active_loans, record_no, loan);
-    // }
-
-
     // // Function to calculate the monthly payment amount.
     // public fun calculate_monthly_payment(
     //     loan: &mut Loan,
