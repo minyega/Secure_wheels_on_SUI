@@ -35,7 +35,7 @@ module Secure_wheels::wheel {
         lender: address,
         car: String, // Unique identifier or details of the car being loaned.
         car_price: u64, // Price of the car being loaned.
-        loan_amount: Balance<SUI>, // Total loan amount.
+        loan_amount: Balance<USDC>, // Total loan amount.
         interest_rate: u64, // Annual interest rate on the loan.
         term_length: u64, // Duration of the loan in months.
         monthly_payment: u64, // Calculated monthly payment amount.
@@ -50,6 +50,7 @@ module Secure_wheels::wheel {
         owner: address,
         balance: Balance<SUI>,
         depth: u64,
+        deposit: u64,
         active: bool
     }
 
@@ -67,7 +68,7 @@ module Secure_wheels::wheel {
         car_price: u64,
         interest_rate: u64,
         term_length: u64,
-        coin: Coin<SUI>,
+        coin: Coin<USDC>,
         clock: &Clock,
         ctx: &mut TxContext
         ) : (Lender, Loan) {
@@ -98,7 +99,29 @@ module Secure_wheels::wheel {
             value: amount
         };
         (lender, loan)
+    }
 
+    public fun get_loan(self: &mut Loan, coin: Coin<SUI>, ctx: &mut TxContext) : (Borrower, Coin<USDC>) {
+        let amount = coin::value(&coin);
+        assert!(amount >= balance::value(&self.loan_amount), Error_InsufficientFunds);
+        let balance_ = coin::into_balance(coin);
+        let id_ = object::id(self);
+
+        let usdc_ = balance::withdraw_all(&mut self.loan_amount);
+        let coin_ = coin::from_balance(usdc_, ctx);
+        let depth_ = coin::value(&coin_);
+
+        let borrower = Borrower {
+            id: object::new(ctx),
+            loan: id_,
+            owner: sender(ctx),
+            balance: balance_,
+            depth: depth_,
+            deposit: amount,
+            active: true
+        };
+
+        (borrower, coin_)
     }
 
     // // Function to calculate the monthly payment amount.
