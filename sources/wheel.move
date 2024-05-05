@@ -1,4 +1,4 @@
-module Secure_wheels::Secure_wheels {
+module Secure_wheels::wheel {
     use sui::transfer;
     use sui::table::{Self, Table};
     use sui::sui::SUI;
@@ -8,7 +8,6 @@ module Secure_wheels::Secure_wheels {
     use sui::balance::{Self, Balance};
     use std::option::{Option, none, some};
     use sui::tx_context::{Self, TxContext};
-
 
     // Constants
     const Error_InvalidLoan: u64 = 1;
@@ -30,7 +29,7 @@ module Secure_wheels::Secure_wheels {
         id: UID,
         borrower: address,
         lender: address,
-        car: vector<u8>, // Unique identifier or details of the car being loaned.
+        car: String, // Unique identifier or details of the car being loaned.
         car_price: u64, // Price of the car being loaned.
         loan_amount: Balance<SUI>, // Total loan amount.
         interest_rate: u64, // Annual interest rate on the loan.
@@ -45,7 +44,7 @@ module Secure_wheels::Secure_wheels {
         id: UID,
         borrower_address: address,
         escrow: Balance<SUI>,
-        name: vector<u8>,
+        name: String,
         credit_score: u64,
         loan_history: Table<u64, Loan>
     }
@@ -53,7 +52,7 @@ module Secure_wheels::Secure_wheels {
     struct Lender has key, store {
         id: UID,
         lender_address: address,
-        name: vector<u8>,
+        name: String,
         active_loans: Table<u64, Loan>
     }
 
@@ -61,7 +60,7 @@ module Secure_wheels::Secure_wheels {
     /* Functions */
     
     // Function to create a new Borrower object.
-    public fun new_borrower(name: vector<u8>, borrower_address: address, ctx: &mut TxContext) : Borrower {
+    public fun new_borrower(name: String, borrower_address: address, ctx: &mut TxContext) : Borrower {
         Borrower {
             id: object::new(ctx),
             borrower_address: borrower_address,
@@ -73,7 +72,7 @@ module Secure_wheels::Secure_wheels {
     }
 
     // Function to create a new Lender object.
-    public fun new_lender(name: vector<u8>, lender_address: address, ctx: &mut TxContext) : Lender {
+    public fun new_lender(name: String, lender_address: address, ctx: &mut TxContext) : Lender {
         // Check if the lender address exists.
         Lender {
             id: object::new(ctx),
@@ -87,7 +86,7 @@ module Secure_wheels::Secure_wheels {
     public fun new_loan(
         borrower: &mut Borrower,
         lender: &mut Lender,
-        car: vector<u8>,
+        car: String,
         car_price: u64,
         loan_amount: Balance<SUI>,
         interest_rate: u64,
@@ -257,7 +256,7 @@ module Secure_wheels::Secure_wheels {
 
 
     // Function to get the loan details.    
-    public fun get_loan_details(loan: &Loan) : (vector<u8>, u64, &Balance<SUI>, u64, u64, u64, u64, Option<u64>, bool) {
+    public fun get_loan_details(loan: &Loan) : (String, u64, &Balance<SUI>, u64, u64, u64, u64, Option<u64>, bool) {
      
         (
             loan.car,
