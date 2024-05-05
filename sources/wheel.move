@@ -180,66 +180,50 @@ module Secure_wheels::wheel {
         
     // }
     
-    // // Function to get the loan details.    
-    // public fun get_loan_details(loan: &Loan) : (String, u64, &Balance<SUI>, u64, u64, u64, u64, Option<u64>, bool) {
+    // Function to get the loan details.    
+    public fun get_loan_details(loan: &Loan) : (String, u64, u64, u64, u64, u64, u64, Option<u64>, bool) {
      
-    //     (
-    //         loan.car,
-    //         loan.car_price,
-    //         &loan.loan_amount,
-    //         loan.interest_rate,
-    //         loan.term_length,
-    //         loan.monthly_payment,
-    //         loan.term_start,
-    //         loan.term_end,
-    //         loan.full_paid_off
-    //     )
-    // }
-    // // Function to get the loan amount.
-    // public fun get_loan_amount(loan: &Loan) : &Balance<SUI> {
-    //     &loan.loan_amount
-    // }
+        (
+            loan.car,
+            loan.car_price,
+            balance::value(&loan.loan_amount),
+            loan.interest_rate,
+            loan.term_length,
+            loan.monthly_payment,
+            loan.term_start,
+            loan.term_end,
+            loan.full_paid_off
+        )
+    }
 
-    // // Function to get the monthly payment amount.
-    // public fun get_monthly_payment(loan: &Loan) : u64 {
-    //     loan.monthly_payment
-    // }
 
-    // // Function to get the loan term start date.
-    // public fun get_term_start(loan: &Loan) : u64 {
-    //     loan.term_start
-    // }
+    // Function to get the loan amount.
+    public fun get_loan_amount(loan: &Loan) : u64 {
+        balance::value(&loan.loan_amount)    
+    }
 
-    // // Function to get the loan term end date.
-    // public fun get_term_end(loan: &Loan) : Option<u64> {
-    //     loan.term_end
-    // }
+    // Function to get the monthly payment amount.
+    public fun get_monthly_payment(loan: &Loan) : u64 {
+        loan.monthly_payment
+    }
 
-    // // Function to get the loan paid off status.
-    // public fun get_loan_paid_off(loan: &Loan) : bool {
-    //     loan.full_paid_off
-    // }
+    // Function to get the loan term start date.
+    public fun get_term_start(loan: &Loan) : u64 {
+        loan.term_start
+    }
 
-    // // Function to get the borrower address.
-    // public fun get_borrower_address(borrower: &Borrower) : address {
-    //     borrower.borrower_address
-    // }
+    // Function to get the loan term end date.
+    public fun get_term_end(loan: &Loan) : Option<u64> {
+        loan.term_end
+    }
 
-    // // Function to get the lender address.
-    // public fun get_lender_address(lender: &Lender) : address {
-    //     lender.lender_address
-    // }
-    // // Transaction to update the credit score of a borrower.
-    // public entry fun update_credit_score(
-    //     borrower: &mut Borrower,
-    //     lender: &Lender,
-    //     credit_score: u64,
-    //     ctx: &mut TxContext
-    // ) {
-    //     // Lender should be the one to update the credit score.
-    //     assert!(tx_context::sender(ctx) == lender.lender_address, Error_NotLender);
-    //     // Check that borrower is not making this call.
-    //     assert!(tx_context::sender(ctx) == borrower.borrower_address, Error_NotBorrower);
-    //     borrower.credit_score = credit_score;
-    // }
+    // Function to get the loan paid off status.
+    public fun get_loan_paid_off(loan: &Loan) : bool {
+        loan.full_paid_off
+    }
+
+    // Function to get the lender address.
+    public fun get_lender_address(lender: &Lender) : address {
+        lender.lender_address
+    }
 }
